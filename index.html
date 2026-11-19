@@ -440,7 +440,7 @@ function drawInfo(hole, board) {
   if (!names.length) return null;
   const left = 52 - seen.size, o = outs.size, flop = board.length === 3;
   return {
-    names, outs: o, flop,
+    names, outs: o, flop, cards: [...outs],
     next: o / left,
     byRiver: flop ? 1 - ((left - o) * (left - o - 1)) / (left * (left - 1)) : o / left,
     rule: Math.min(100, o * (flop ? 4 : 2)),
@@ -789,6 +789,40 @@ const COMBOS = [
   [1, 'Пара', 'Две карты одного достоинства.', 'Ts Th Ac 8d 4s', 0.438],
   [0, 'Старшая карта', 'Ничего не собралось — сравнивают старшие карты по очереди.', 'As Qd 9c 6h 3s', 0.174],
 ];
+// ---------- таблицы стартовых рук (общие с ботом) ----------
+const CHARTS = [
+  ['UTG', 'UTG'], ['MP', 'MP'], ['CO', 'CO'], ['BTN', 'BTN'], ['SB', 'SB'], ['HU', 'Один на один'],
+  ['VS', 'Против раннего рейза'], ['VSL', 'Против позднего рейза'], ['VSBBE', 'BB против раннего'], ['VSBB', 'BB против позднего'],
+  ['V3', 'Против 3-бета'], ['V4', 'Против 4-бета'],
+];
+const CHART_NOTE = {
+  VS: 'Против открытия с ранней или средней позиции (UTG, MP): их диапазон сильный, поэтому 3-бет только с топ-руками.',
+  VSL: 'Против открытия с CO, BTN или SB: они повышают широко, поэтому 3-бет делают чаще.',
+  VSBBE: 'На большом блайнде против открытия с UTG или MP: колл дешевле, чем с других мест, но диапазон соперника сильный, поэтому 3-бет только с топ-руками.',
+  VSBB: 'На большом блайнде против открытия с CO, BTN или SB: ты уже вложил 1 bb, а соперник открывается широко, поэтому защищаешься широко.',
+  V3: 'Ты открылся, а тебе ответили 3-бетом: 4-бет с топ-руками, колл с сильными, остальное — фолд.',
+  V4: 'Против 4-бета на весь стек играют только QQ+ и AK, остальное — фолд.',
+};
+function chartCell(key, cls) {
+  if (OPEN[key]) return OPEN[key].has(cls) ? 'r' : '';
+  if (key === 'V3') return VS_3BET.fourbet.has(cls) ? 'r' : VS_3BET.call.has(cls) ? 'c' : '';
+  if (key === 'V4') return VS_4BET.shove.has(cls) ? 'r' : '';
+  const late = key === 'VSL' || key === 'VSBB', bb = key === 'VSBB' || key === 'VSBBE';
+  if (VS_OPEN.threebet.has(cls) || (late && VS_OPEN.threebetLate.has(cls))) return 'r';
+  if (VS_OPEN.call.has(cls) || (bb && VS_OPEN.callBB.has(cls)) || (key === 'VSBB' && VS_OPEN.callBBLate.has(cls))) return 'c';
+  return '';
+}
+const chartRaiseWord = key => OPEN[key] ? 'рейз' : key === 'V3' ? '4-бет' : key === 'V4' ? 'олл-ин' : '3-бет';
+// какую таблицу показать игроку i: по его позиции и по тому, что было до него
+function chartKey(G, i) {
+  const pos = G.pos[i], n = G.players.length;
+  if (G.street > 0 || G.raises === 0 || G.over) return n === 2 && pos === 'BTN' ? 'HU' : pos === 'BB' ? 'VSBB' : pos;
+  if (G.raises === 2) return 'V3';
+  if (G.raises > 2) return 'V4';
+  const late = n === 2 || LATE.includes(G.pos[G.aggressorIdx]);
+  if (pos === 'BB') return late ? 'VSBB' : 'VSBBE';
+  return late ? 'VSL' : 'VS';
+}
 // ===== CORE END =====
 
 // ===== интерфейс =====
@@ -1003,31 +1037,7 @@ function nextHand() {
 }
 
 // ---------- шпаргалка ----------
-const CHARTS = [
-  ['UTG', 'UTG'], ['MP', 'MP'], ['CO', 'CO'], ['BTN', 'BTN'], ['SB', 'SB'], ['HU', 'Один на один'],
-  ['VS', 'Против раннего рейза'], ['VSL', 'Против позднего рейза'], ['VSBBE', 'BB против раннего'], ['VSBB', 'BB против позднего'],
-];
-const CHART_NOTE = {
-  VS: 'Против открытия с ранней или средней позиции (UTG, MP): их диапазон сильный, поэтому 3-бет только с топ-руками.',
-  VSL: 'Против открытия с CO, BTN или SB: они повышают широко, поэтому 3-бет делают чаще.',
-  VSBBE: 'На большом блайнде против открытия с UTG или MP: колл дешевле, чем с других мест, но диапазон соперника сильный, поэтому 3-бет только с топ-руками.',
-  VSBB: 'На большом блайнде против открытия с CO, BTN или SB: ты уже вложил 1 bb, а соперник открывается широко, поэтому защищаешься широко.',
-};
-function chartCell(key, cls) {
-  if (OPEN[key]) return OPEN[key].has(cls) ? 'r' : '';
-  const late = key === 'VSL' || key === 'VSBB', bb = key === 'VSBB' || key === 'VSBBE';
-  if (VS_OPEN.threebet.has(cls) || (late && VS_OPEN.threebetLate.has(cls))) return 'r';
-  if (VS_OPEN.call.has(cls) || (bb && VS_OPEN.callBB.has(cls)) || (key === 'VSBB' && VS_OPEN.callBBLate.has(cls))) return 'c';
-  return '';
-}
-function heroChart() {
-  const h = hero(); if (!h.hole.length) return 'BTN';
-  const pos = G.pos[0], n = G.players.length;
-  if (G.street > 0 || G.raises === 0 || G.over) return n === 2 && pos === 'BTN' ? 'HU' : pos === 'BB' ? 'VSBB' : pos;
-  const late = n === 2 || LATE.includes(G.pos[G.aggressorIdx]);
-  if (pos === 'BB') return late ? 'VSBB' : 'VSBBE';
-  return late ? 'VSL' : 'VS';
-}
+function heroChart() { return hero().hole.length ? chartKey(G, 0) : 'BTN'; }
 function sheetHTML() {
   const h = hero(), inHand = h.hole.length > 0;
   if (ui.sheetTab === 'combos') {
@@ -1053,7 +1063,7 @@ function sheetHTML() {
     const isOpen = !!OPEN[key];
     const legend = isOpen
       ? `<span><i style="background:var(--brass)"></i>рейз</span><span><i style="background:var(--panel-2)"></i>фолд</span><span>≈${pct(rangePct(OPEN[key]))} всех рук</span>`
-      : `<span><i style="background:var(--brass)"></i>3-бет</span><span><i style="background:var(--call)"></i>колл</span><span><i style="background:var(--panel-2)"></i>фолд</span>`;
+      : `<span><i style="background:var(--brass)"></i>${chartRaiseWord(key)}</span><span><i style="background:var(--call)"></i>колл</span><span><i style="background:var(--panel-2)"></i>фолд</span>`;
     const note = isOpen ? `<b>${key === 'HU' ? 'BTN' : key}</b> — ${POS_INFO[key]} Никто до тебя не повышал: рейз до 2,5 bb${key === 'SB' ? ' (из SB — 3 bb)' : ''} или фолд.` : CHART_NOTE[key];
     return `<div class="chart-pick" role="group" aria-label="Ситуация">${CHARTS.map(([k, l]) => `<button class="chip" type="button" data-chart="${k}" aria-pressed="${k === key}">${l}</button>`).join('')}</div>`
       + `<p style="font-size:13px">${note}</p><div class="legend">${legend}${me ? '<span>в рамке — твоя рука</span>' : ''}</div>`
