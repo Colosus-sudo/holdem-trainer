@@ -167,18 +167,54 @@ th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertic
 th{font-weight:500;color:var(--muted);font-size:12px}
 td.num,th.num{text-align:right;white-space:nowrap}
 .example{background:var(--panel-2);border-radius:12px;padding:10px 12px;font-size:13px}
-.wiki-q{width:100%;padding:9px 12px;border-radius:12px;border:1px solid var(--line);background:var(--panel-2);font-size:15px}
+.wiki-q{width:100%;padding:9px 12px;border-radius:12px;border:1px solid var(--line);background:var(--panel-2);font-size:16px} /* меньше 16px — iPhone приближает страницу при вводе */
 .we{border-bottom:1px solid var(--line)}
 .we summary{cursor:pointer;padding:9px 2px;font-weight:600;font-size:15px}
 .we summary small{font-weight:400;color:var(--muted);font-size:12px;margin-left:8px}
 .we p{padding:0 2px 11px;font-size:14px;line-height:1.5}
 .wlink{background:none;border:0;padding:0;color:var(--brass);text-decoration:underline;text-underline-offset:2px}
+.wback{display:block;margin:0 0 6px;text-align:left;font-size:14px}
 .field{display:grid;gap:6px;border:0;margin:0;padding:0}
 .field > span,.field legend{font-weight:600;padding:0}
 .field label{display:flex;gap:8px;align-items:center}
 select{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:7px 10px}
 .bots{margin:0;padding:0;list-style:none;display:grid;gap:6px;font-size:13px}
 .bots li{color:var(--muted)} .bots b{color:var(--ink)} .bots .at{color:var(--brass);font-size:11px;margin-left:4px}
+.dlg-head .pop{order:4;font-size:13px}
+
+/* окна шпаргалки поверх стола: тянуть за шапку, размер — за уголок; можно открыть несколько и играть */
+.fw{position:fixed;z-index:6;display:flex;flex-direction:column;min-width:170px;min-height:120px;background:var(--panel);border:1px solid var(--brass);border-radius:12px;box-shadow:0 8px 28px var(--shade);overflow:hidden}
+.fw.min{min-height:0;height:auto!important}
+.fw.min .fw-body,.fw.min .fw-size{display:none}
+.fw-head{display:flex;align-items:center;gap:2px;padding:2px 2px 2px 10px;background:var(--panel-2);cursor:move;touch-action:none;user-select:none;-webkit-user-select:none}
+.fw-title{flex:1;min-width:0;font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fw-head button{flex:none;width:36px;height:32px;border:0;border-radius:8px;background:none;font-size:18px;line-height:1;color:var(--muted)}
+.fw-head button:hover{color:var(--ink);background:var(--panel)}
+.fw-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:8px;display:grid;gap:6px;grid-auto-rows:max-content;align-content:start;container-type:size;border-top:1px solid var(--line)} /* max-content: иначе высота окна сплющит прокручиваемую таблицу аутов */
+.fw-size{position:absolute;right:0;bottom:0;width:24px;height:24px;cursor:nwse-resize;touch-action:none;forced-color-adjust:none;background:linear-gradient(135deg,transparent 55%,var(--muted) 55% 61%,transparent 61% 72%,var(--muted) 72% 78%,transparent 78%)}
+.fw .full{display:none}
+.fw-body p,.fw-body h3{margin:0}
+.fw-body h3{font-size:13px}
+.fw .combo{flex-wrap:nowrap;gap:8px;padding:2px 6px;border-radius:8px}
+.fw .combo .cc{--cw:20px;gap:2px}
+.fw .combo .cn{font-size:13px;gap:0 6px}
+.fw .combo .cn small,.fw .combo .now-tag{font-size:11px}
+.fw .chart-sel{width:100%;font-size:16px;padding:4px 8px}
+.fw .legend{gap:4px 10px;font-size:11px}
+/* таблица рук влезает и по ширине, и по высоте окна: 72px — выбор ситуации и легенда над ней */
+.fw .hgrid{grid-template-columns:repeat(13,minmax(0,1fr));gap:1px;max-width:calc(100cqh - 72px);margin-inline:auto}
+.fw .hc{font-size:9px;font-size:clamp(6px,min(3.3cqi,(100cqh - 72px) * .033),12px);border-radius:3px;overflow:hidden}
+@container (max-height:230px){ /* низкое окно (телефон лёжа): вся высота таблице, она сама следит за раздачей */
+  .fw .chart-sel,.fw .legend{display:none}
+  .fw .hgrid{max-width:100cqh}
+  .fw .hc{font-size:clamp(6px,min(3.3cqi,3.3cqh),12px)}
+}
+.fw table{font-size:12px}
+.fw th,.fw td{padding:4px 5px}
+.fw th.num{white-space:normal}
+.fw .wiki-q{padding:6px 10px}
+.fw .we summary{padding:6px 2px;font-size:14px}
+.fw .we p{font-size:13px}
 
 @media (max-width:900px){
   .app{grid-template-columns:minmax(0,1fr);grid-template-areas:"top" "table" "coach" "actions"}
@@ -200,6 +236,38 @@ select{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;
   .abtn.primary{flex-grow:1.4}
   .act,.hn{white-space:normal;max-width:96px;text-align:center}
 }
+/* телефон лёжа: весь стол по высоте экрана слева, кнопки ходов справа сверху, тренер ниже.
+   min-width — чтобы не сработало на телефоне стоя, когда клавиатура съела высоту */
+@media (min-aspect-ratio:4/3) and (max-height:560px) and (min-width:561px){
+  .app{grid-template-columns:minmax(0,1fr) 230px;grid-template-areas:"table actions" "table top" "coach coach";gap:8px 12px;padding-block:4px 0}
+  .brand{display:none}
+  .top{gap:6px}
+  .stats{gap:4px}
+  .table-wrap{padding:20px 30px 42px}
+  /* сукно во всю высоту экрана, шириной до 2:1; 66px — отступы над и под ним: места игроков выступают за край.
+     На узком телефоне оно выше, чем 2:1, — иначе подписи наезжают на борд и карты соседей */
+  .felt{aspect-ratio:auto;margin-inline:auto;
+    width:min(100%,(100vh - 66px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)) * 2);
+    width:min(100%,(100dvh - 66px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)) * 2);
+    height:calc(100vh - 66px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+    height:calc(100dvh - 66px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
+  .act,.hn{max-width:104px;overflow:hidden;text-overflow:ellipsis} /* длинное название руки не обрезается краем стола */
+  .seat:not(.hero):not(.shown) .cards{display:none}
+  .center{--cw:26px}
+  .seat{max-width:82px}
+  .plate{min-width:62px;max-width:82px;padding:4px 6px 2px}
+  .plate .nm{font-size:11px}
+  .seat .cards{--cw:19px}
+  .seat.hero .cards{--cw:34px}
+  .actions{position:static;border-top:0;padding:0}
+  .strip{display:flex}
+  .coach{position:static}
+  .chip{padding:4px 8px}
+  .abtn{font-size:14px;padding:9px 4px;white-space:normal;line-height:1.15}
+  .abtn.primary{flex-grow:1.4}
+  .row{flex-wrap:wrap} .next{flex:1 1 auto} /* итог раздачи во всю ширину, «Следующая раздача» под ним */
+  .dlg-head .pop{order:0} .dlg-head [data-close]{order:1} /* «Открыть окном» в строку с заголовком: шапка ниже */
+}
 @media (prefers-reduced-motion:no-preference){
   .turn .plate{animation:glow 1.4s ease-in-out infinite alternate}
   @keyframes glow{to{box-shadow:0 0 0 2px var(--brass),0 0 16px var(--brass)}}
@@ -218,6 +286,7 @@ select{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;
   <div class="actions" id="actions"></div>
   <p class="sr" id="status" aria-live="polite"></p>
 </div>
+<div id="fws"></div>
 
 <dialog id="sheet" aria-labelledby="sheet-title">
   <div class="dlg-head">
@@ -229,6 +298,7 @@ select{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;
       <button class="tab" type="button" role="tab" data-tab="outs">Ауты и шансы</button>
       <button class="tab" type="button" role="tab" data-tab="wiki">Энциклопедия</button>
     </div>
+    <button class="link pop" type="button" id="pop-out">Открыть окном поверх стола</button>
   </div>
   <div class="dlg-body" id="sheet-body"></div>
 </dialog>
@@ -1026,7 +1096,7 @@ const store = {
 const settings = Object.assign({ opponents: 5, hint: 'button' }, store.get('ht-settings', {}));
 let stats = Object.assign({ hands: 0, net: 0, decisions: 0, agree: 0 }, store.get('ht-stats', {}));
 let G = createGame(settings.opponents);
-const ui = { advice: null, hintShown: false, feedback: null, raiseTo: 0, sheetTab: 'combos', chart: null, wikiQ: '', wikiCat: '' };
+const ui = { advice: null, hintShown: false, feedback: null, raiseTo: 0, sheetTab: 'combos', chart: null, wikiQ: '', wikiCat: '', wikiBack: [] };
 let timer = null;
 const hero = () => G.players[0];
 const ACT_RU = { fold: 'фолд', check: 'чек', call: 'колл', raise: 'ставка или рейз' };
@@ -1065,7 +1135,7 @@ function presets() {
   return out;
 }
 
-function render() { renderStats(); renderTable(); renderCoach(); renderActions(); }
+function render() { renderStats(); renderTable(); renderCoach(); renderActions(); renderWins(); }
 function renderStats() {
   const acc = stats.decisions ? Math.round(stats.agree / stats.decisions * 100) + '%' : '—';
   $('#stats').innerHTML = `<span class="stat">Раздач <b>${stats.hands}</b></span>`
@@ -1209,6 +1279,7 @@ function tick() {
     ui.advice = advise(G, 0, 2500);
     const ps = presets(); ui.raiseTo = ps[0][1];
     render(); announce();
+    if (matchMedia(LANDSCAPE).matches) $('#actions').scrollIntoView({ block: 'nearest' }); // лёжа кнопки не прилипают к краю — твой ход, показываем их
     return;
   }
   render();
@@ -1225,6 +1296,7 @@ function nextHand() {
   if (settings.opponents !== G.players.length - 1) G = createGame(settings.opponents);
   newHand(G);
   ui.feedback = null; ui.advice = null; ui.hintShown = false;
+  for (const w of wins) w.chart = null; // таблица рук в окне снова следит за раздачей
   tick();
 }
 
@@ -1232,33 +1304,39 @@ function nextHand() {
 function heroChart() { return hero().hole.length ? chartKey(G, 0) : 'BTN'; }
 const wikiText = t => t.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, a, b) => `<button class="wlink" type="button" data-wiki="${a}">${b || a}</button>`)
   .replace(/\{([^}]+)\}/g, (_, cs) => cs.split(' ').map(s => mini(parseCard(s))).join(' '));
-function wikiListHTML() {
-  const q = ui.wikiQ.trim(), inCat = e => !ui.wikiCat || e.cat === ui.wikiCat;
-  const list = (q ? wikiFind(q) : WIKI).filter(inCat);
-  if (!list.length) return '<p class="fine">Ничего не нашлось. Попробуй другое слово или раздел «Все».</p>';
-  const open = q && list.length <= 3, label = Object.fromEntries(WIKI_CATS);
-  const item = e => `<details class="we"${open ? ' open' : ''}><summary>${e.title}${q ? `<small>${label[e.cat]}</small>` : ''}</summary><p>${wikiText(e.text)}</p></details>`;
-  if (q || ui.wikiCat) return list.map(item).join('');
-  return WIKI_CATS.map(([k, l]) => `<h3>${l}</h3>` + list.filter(e => e.cat === k).map(item).join('')).join('');
+const escHTML = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+function wikiListHTML(st) {
+  // в окне кнопок разделов нет (скрыты ради места), поэтому и фильтра по разделу нет — иначе его не снять
+  const q = st.wikiQ.trim(), cat = st === ui ? st.wikiCat : '', inCat = e => !cat || e.cat === cat, label = Object.fromEntries(WIKI_CATS);
+  const list = (q ? wikiFind(q) : WIKI).filter(inCat), back = st.wikiBack[st.wikiBack.length - 1];
+  // после перехода по ссылке — дорога обратно: к статье со ссылкой, к своему поиску или к списку
+  const backBtn = !back ? '' : `<button class="link wback" type="button" data-wiki-back="1">← ${back.from ? `Назад: ${escHTML(back.from)}`
+    : back.q ? `Назад к поиску «${escHTML(back.q)}»` : back.cat && st === ui ? `Назад к разделу «${label[back.cat]}»` : 'Назад к списку'}</button>`;
+  if (!list.length) return backBtn + '<p class="fine">Ничего не нашлось. Попробуй другое слово или раздел «Все».</p>';
+  const open = q && list.length <= 3;
+  const item = e => `<details class="we" data-t="${escHTML(e.title)}"${open ? ' open' : ''}><summary>${e.title}${q ? `<small>${label[e.cat]}</small>` : ''}</summary><p>${wikiText(e.text)}</p></details>`;
+  if (q || cat) return backBtn + list.map(item).join('');
+  return backBtn + WIKI_CATS.map(([k, l]) => `<h3>${l}</h3>` + list.filter(e => e.cat === k).map(item).join('')).join('');
 }
-function sheetHTML() {
-  if (ui.sheetTab === 'wiki') return `<input type="search" id="wiki-q" class="wiki-q" placeholder="Поиск: кикер, 3-бет, натс…" aria-label="Поиск по энциклопедии" autocomplete="off">`
-    + `<div class="chart-pick" role="group" aria-label="Раздел">${[['', 'Все'], ...WIKI_CATS].map(([k, l]) => `<button class="chip" type="button" data-wcat="${k}" aria-pressed="${k === ui.wikiCat}">${l}</button>`).join('')}</div>`
-    + `<div id="wiki-list">${wikiListHTML()}</div>`;
+// st — состояние места показа: ui для шпаргалки или своё у каждого окна; .full в окне скрыто ради места
+function sheetHTML(tab, st) {
+  if (tab === 'wiki') return `<input type="search" class="wiki-q" placeholder="Поиск: кикер, 3-бет, натс…" aria-label="Поиск по энциклопедии" autocomplete="off">`
+    + `<div class="chart-pick full" role="group" aria-label="Раздел">${[['', 'Все'], ...WIKI_CATS].map(([k, l]) => `<button class="chip" type="button" data-wcat="${k}" aria-pressed="${k === st.wikiCat}">${l}</button>`).join('')}</div>`
+    + `<div class="wiki-list">${wikiListHTML(st)}</div>`;
   const h = hero(), inHand = h.hole.length > 0;
-  if (ui.sheetTab === 'combos') {
+  if (tab === 'combos') {
     const cat = inHand ? catOf(evaluate([...h.hole, ...G.board])) : -1;
-    return `<p class="fine">Шанс — как часто комбинация собирается к риверу из 7 карт (2 твои + 5 на столе). Подсвечена твоя текущая.</p>`
+    return `<p class="fine full">Шанс — как часто комбинация собирается к риверу из 7 карт (2 твои + 5 на столе). Подсвечена твоя текущая.</p>`
       + COMBOS.map(([c, name, desc, ex, p]) => `<div class="combo ${c === cat ? 'now' : ''}"><div class="cc">${ex.split(' ').map(s => cardHTML(parseCard(s))).join('')}</div>`
-        + `<div class="ct"><div class="cn">${name} <small>${(p * 100).toLocaleString('ru-RU', { maximumSignificantDigits: 3 })}%</small>${c === cat ? '<span class="now-tag">у тебя сейчас</span>' : ''}</div><div class="cd">${desc}</div></div></div>`).join('')
-      + `<h3>Как сравнивать руки</h3><ul class="rules">
+        + `<div class="ct"><div class="cn">${name} <small>${(p * 100).toLocaleString('ru-RU', { maximumSignificantDigits: 3 })}%</small>${c === cat ? '<span class="now-tag">у тебя сейчас</span>' : ''}</div><div class="cd full">${desc}</div></div></div>`).join('')
+      + `<h3 class="full">Как сравнивать руки</h3><ul class="rules full">
         <li>Комбинация всегда из 5 карт: лучшие пять из семи. Можно взять обе свои карты, одну или ни одной.</li>
         <li>Масти равны: флеш пик не старше флеша червей.</li>
         <li>При одинаковой комбинации сравнивают её карты, затем кикер — старшую карту вне комбинации.</li>
         <li>Если всё совпало, банк делится поровну.</li></ul>`;
   }
-  if (ui.sheetTab === 'hands') {
-    const key = ui.chart || heroChart();
+  if (tab === 'hands') {
+    const key = st.chart || heroChart();
     const me = inHand ? handClass(h.hole[0], h.hole[1]) : '';
     let cells = '';
     for (let a = 0; a < 13; a++) for (let b = 0; b < 13; b++) {
@@ -1271,22 +1349,25 @@ function sheetHTML() {
       ? `<span><i style="background:var(--brass)"></i>рейз</span><span><i style="background:var(--panel-2)"></i>фолд</span><span>≈${pct(rangePct(OPEN[key]))} всех рук</span>`
       : `<span><i style="background:var(--brass)"></i>${chartRaiseWord(key)}</span><span><i style="background:var(--call)"></i>колл</span><span><i style="background:var(--panel-2)"></i>фолд</span>`;
     const note = isOpen ? `<b>${key === 'HU' ? 'BTN' : key}</b> — ${POS_INFO[key]} Никто до тебя не повышал: рейз до 2,5 bb${key === 'SB' ? ' (из SB — 3 bb)' : ''} или фолд.` : CHART_NOTE[key];
-    return `<div class="chart-pick" role="group" aria-label="Ситуация">${CHARTS.map(([k, l]) => `<button class="chip" type="button" data-chart="${k}" aria-pressed="${k === key}">${l}</button>`).join('')}</div>`
-      + `<p style="font-size:13px">${note}</p><div class="legend">${legend}${me ? '<span>в рамке — твоя рука</span>' : ''}</div>`
+    const pick = st === ui
+      ? `<div class="chart-pick" role="group" aria-label="Ситуация">${CHARTS.map(([k, l]) => `<button class="chip" type="button" data-chart="${k}" aria-pressed="${k === key}">${l}</button>`).join('')}</div>`
+      : `<select class="chart-sel" aria-label="Ситуация"><option value="">Сейчас: ${Object.fromEntries(CHARTS)[heroChart()]}</option>${CHARTS.map(([k, l]) => `<option value="${k}"${k === st.chart ? ' selected' : ''}>${l}</option>`).join('')}</select>`; // в окне 12 кнопок не помещаются
+    return pick
+      + `<p class="full" style="font-size:13px">${note}</p><div class="legend">${legend}${me ? '<span class="full">в рамке — твоя рука</span>' : ''}</div>`
       + `<div class="hgrid-wrap"><div class="hgrid">${cells}</div></div>`
-      + `<p class="fine">Над диагональю — одномастные руки (s), под ней — разномастные (o), на диагонали — пары. Чарты упрощены для стола на 6 мест и стеков 100 bb.</p>`;
+      + `<p class="fine full">Над диагональю — одномастные руки (s), под ней — разномастные (o), на диагонали — пары. Чарты упрощены для стола на 6 мест и стеков 100 bb.</p>`;
   }
   const DRAWS = [['Флеш-дро', 'четыре карты одной масти', 9], ['Стрит-дро с двух сторон', '9-8 на столе 7-6-2: подойдёт десятка или пятёрка', 8], ['Гатшот', 'не хватает карты в середине: 9-8 на 6-5-2 — нужна семёрка', 4], ['Флеш-дро + стрит-дро', '', 15], ['Флеш-дро + гатшот', '', 12], ['Две оверкарты', 'обе твои карты старше всех карт стола', 6], ['Карманная пара до сета', 'нужна третья карта того же достоинства', 2]];
   const byRiver = o => 1 - ((47 - o) * (46 - o)) / (47 * 46);
-  return `<p style="font-size:14px"><b>Ауты</b> — карты, которые улучшат твою руку до, скорее всего, выигрышной.</p>
+  return `<p class="full" style="font-size:14px"><b>Ауты</b> — карты, которые улучшат твою руку до, скорее всего, выигрышной.</p>
     <div class="tbl-wrap"><table><thead><tr><th>Дро</th><th class="num">Аутов</th><th class="num">С флопа до ривера</th><th class="num">Одна карта</th></tr></thead><tbody>
-    ${DRAWS.map(([n, d, o]) => `<tr><td>${n}${d ? `<div class="fine">${d}</div>` : ''}</td><td class="num">${o}</td><td class="num">${pct1(byRiver(o))}</td><td class="num">${pct1(o / 46)}</td></tr>`).join('')}
+    ${DRAWS.map(([n, d, o]) => `<tr><td>${n}${d ? `<div class="fine full">${d}</div>` : ''}</td><td class="num">${o}</td><td class="num">${pct1(byRiver(o))}</td><td class="num">${pct1(o / 46)}</td></tr>`).join('')}
     </tbody></table></div>
     <h3>Правило 2 и 4</h3>
     <p style="font-size:13px">Умножь ауты на 4 на флопе (шанс собрать к риверу) или на 2 на тёрне (шанс на одной карте). 9 аутов флеш-дро: ≈36% с флопа, ≈18% с тёрна.</p>
     <h3>Шансы банка</h3>
     <p style="font-size:13px">Сколько процентов нужно выигрывать, чтобы колл окупался: <b>колл ÷ (банк + колл)</b>. Если твой шанс выше — коллируй, ниже — сбрасывай.</p>
-    <div class="example">Банк 10 bb, соперник ставит 5 bb. В банке стало 15 bb, тебе нужно доставить 5 bb. Нужно: 5 ÷ (15 + 5) = <b>25%</b>. У тебя флеш-дро на тёрне — 19,6%. Колл без расчёта на будущие выигрыши (подразумеваемые шансы) убыточен.</div>`;
+    <div class="example full">Банк 10 bb, соперник ставит 5 bb. В банке стало 15 bb, тебе нужно доставить 5 bb. Нужно: 5 ÷ (15 + 5) = <b>25%</b>. У тебя флеш-дро на тёрне — 19,6%. Колл без расчёта на будущие выигрыши (подразумеваемые шансы) убыточен.</div>`;
 }
 function openSheet() {
   ui.chart = null;
@@ -1295,8 +1376,8 @@ function openSheet() {
 }
 function renderSheet() {
   document.querySelectorAll('#sheet .tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === ui.sheetTab)));
-  $('#sheet-body').innerHTML = sheetHTML();
-  const q = $('#wiki-q'); if (q) q.value = ui.wikiQ;
+  $('#sheet-body').innerHTML = sheetHTML(ui.sheetTab, ui);
+  const q = $('#sheet .wiki-q'); if (q) q.value = ui.wikiQ;
 }
 function openSettings() {
   $('#opp').value = String(settings.opponents);
@@ -1309,6 +1390,114 @@ function renderBots() {
   $('#bots').innerHTML = BOT_ORDER.map(s => `<li><b>${STYLES[s].name}</b> (${STYLES[s].tag}) — ${STYLES[s].desc}${at.has(s) ? '<span class="at">за столом</span>' : ''}</li>`).join('');
 }
 
+// ---------- окна шпаргалки поверх стола ----------
+const wins = []; // { tab, chart, wikiQ, wikiCat, wikiBack, min, box: {x, y, w, h}, el, html }
+let zTop = 6, drag = null;
+const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
+const winOf = el => { const f = el.closest('.fw'); return f ? wins.find(w => w.el === f) : ui; };
+const saveWins = () => store.set('ht-windows', wins.map(({ tab, box, min }) => ({ tab, box, min })));
+const LANDSCAPE = '(min-aspect-ratio:4/3) and (max-height:560px) and (min-width:561px)'; // телефон лёжа, как в CSS
+// высота экрана без учёта щипкового зума; в quirks-режиме clientHeight — высота всей страницы
+const viewH = () => document.compatMode === 'CSS1Compat' ? document.documentElement.clientHeight : innerHeight;
+function openWin(tab, init) {
+  let st = wins.find(w => w.tab === tab);
+  if (!st) {
+    const name = $(`#sheet .tab[data-tab="${tab}"]`).textContent, n = wins.length, H = viewH();
+    // лесенкой от левого верхнего угла: на телефоне видны свои карты и кнопки ходов; борд закрывает только
+    // таблица рук — она нужна до флопа, когда борда ещё нет. Лёжа экран низкий — окно почти во всю высоту
+    const h = matchMedia(LANDSCAPE).matches ? H - 56 : Math.min(Math.round(H * (tab === 'hands' ? .46 : .38)), 420);
+    st = { tab, chart: null, wikiQ: '', wikiCat: '', wikiBack: [], min: false, box: { x: 8 + n * 24, y: 8 + n * 40, w: Math.min(document.documentElement.clientWidth - 16, 280), h } };
+    st.el = document.createElement('section');
+    st.el.className = 'fw';
+    st.el.setAttribute('aria-label', name);
+    st.el.innerHTML = `<div class="fw-head"><span class="fw-title" tabindex="0" title="Двигать — за шапку или стрелками, размер — за уголок или Shift+стрелки">${name}</span><button type="button" data-fw-min="1"></button>`
+      + `<button type="button" data-fw-x="1" aria-label="Закрыть окно «${name}»">×</button></div><div class="fw-body"></div><span class="fw-size" aria-hidden="true"></span>`;
+    $('#fws').append(st.el);
+    wins.push(st);
+  }
+  Object.assign(st, init);
+  setMin(st, st.min);
+  renderWin(st);
+  st.el.style.zIndex = ++zTop;
+  saveWins();
+}
+function setMin(st, min) {
+  const b = st.el.querySelector('[data-fw-min]');
+  st.min = min;
+  st.el.classList.toggle('min', min);
+  b.textContent = min ? '+' : '–';
+  b.setAttribute('aria-expanded', String(!min));
+  b.setAttribute('aria-label', `${min ? 'Развернуть' : 'Свернуть'} окно «${st.el.getAttribute('aria-label')}»`);
+  place(st);
+}
+// окно целиком на экране и внутри полей страницы: у самого края — жесты системы «назад» и «домой» и вырез экрана.
+// Сохранённый размер не меняем — после поворота телефона окно вернётся
+function place(st) {
+  const W = document.documentElement.clientWidth, H = viewH(), b = st.box, s = st.el.style;
+  const app = getComputedStyle($('.app')), root = getComputedStyle(document.documentElement);
+  const l = parseFloat(app.paddingLeft), r = parseFloat(app.paddingRight), t = parseFloat(root.paddingTop) || 0, d = parseFloat(root.paddingBottom) || 0;
+  const w = clamp(b.w, 170, W - l - r), h = clamp(b.h, 120, H - t - d);
+  s.width = w + 'px'; s.height = h + 'px';
+  s.left = clamp(b.x, l, W - r - w) + 'px';
+  s.top = clamp(b.y, t, H - d - (st.min ? st.el.offsetHeight : h)) + 'px';
+}
+function renderWin(st, html = sheetHTML(st.tab, st)) {
+  const body = st.el.querySelector('.fw-body'), top = body.scrollTop;
+  const sel = document.activeElement?.matches('.chart-sel') && body.contains(document.activeElement);
+  st.html = html; body.innerHTML = html; body.scrollTop = top;
+  if (sel) body.querySelector('.chart-sel').focus({ preventScroll: true }); // иначе следующие буквы уйдут в ходы F/C/R/N
+  const q = body.querySelector('.wiki-q'); if (q) q.value = st.wikiQ;
+  const now = body.querySelector('.combo.now'); // своя комбинация всегда на виду, даже если окно маленькое
+  if (now) {
+    const r = now.getBoundingClientRect(), b = body.getBoundingClientRect();
+    if (r.top < b.top || r.bottom > b.bottom) body.scrollTop += r.top - b.top - (b.height - r.height) / 2;
+  }
+}
+// на ходах игры перерисовываем только окна, зависящие от раздачи, и только если что-то поменялось:
+// в энциклопедии пропал бы фокус поиска и свернулись бы открытые статьи. Пока открыт выбор ситуации, окно не трогаем —
+// иначе список закроется у тебя под пальцем; догоняем, когда он теряет фокус
+function renderWins() {
+  const picking = document.activeElement?.matches('.chart-sel') ? document.activeElement : null;
+  for (const st of wins) if ((st.tab === 'combos' || st.tab === 'hands') && !st.el.contains(picking)) {
+    const html = sheetHTML(st.tab, st);
+    if (html !== st.html) renderWin(st, html);
+  }
+}
+document.addEventListener('focusout', e => { if (e.target.matches?.('.chart-sel')) setTimeout(renderWins); });
+document.addEventListener('pointerdown', e => {
+  if (!e.target.closest('.fw')) return;
+  const st = winOf(e.target), grip = !!e.target.closest('.fw-size');
+  st.el.style.zIndex = ++zTop;
+  if (drag || e.button !== 0 || !grip && (!e.target.closest('.fw-head') || e.target.closest('button'))) return;
+  e.preventDefault();
+  drag = { st, grip, id: e.pointerId, x: e.clientX, y: e.clientY, r: st.el.getBoundingClientRect() };
+  st.el.setPointerCapture(e.pointerId);
+});
+document.addEventListener('pointermove', e => {
+  if (!drag || e.pointerId !== drag.id) return; // второй палец окно не двигает
+  const { st, grip, r } = drag, dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 4) return; // простое касание — не перетаскивание
+  drag.moved = true;
+  if (grip) st.box = { x: r.left, y: r.top, w: r.width + dx, h: r.height + dy };
+  else { st.box.x = r.left + dx; st.box.y = r.top + dy; }
+  place(st);
+});
+function endDrag(e) {
+  if (!drag || e.pointerId !== drag.id) return;
+  const { st, grip, moved } = drag, r = st.el.getBoundingClientRect();
+  drag = null;
+  if (!moved) return; // иначе касание сохранило бы урезанное под повёрнутый экран место
+  st.box.x = Math.round(r.left); st.box.y = Math.round(r.top);
+  if (grip && !st.min) { st.box.w = Math.round(r.width); st.box.h = Math.round(r.height); }
+  saveWins();
+}
+document.addEventListener('pointerup', endDrag);
+document.addEventListener('pointercancel', endDrag);
+addEventListener('resize', () => {
+  wins.forEach(place);
+  if (matchMedia(LANDSCAPE).matches) $('#actions').scrollIntoView({ block: 'nearest' }); // повернул телефон — кнопки ходов на виду
+});
+
 document.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   switch (b.id) {
@@ -1318,19 +1507,55 @@ document.addEventListener('click', e => {
     case 'next': return nextHand();
     case 'open-sheet': return openSheet();
     case 'open-settings': return openSettings();
+    case 'pop-out': { // лёжа новое окно открывается свёрнутым: развёрнутое сразу закрыло бы свои карты и борд
+      const tab = ui.sheetTab, fresh = !wins.some(w => w.tab === tab);
+      $('#sheet').close();
+      openWin(tab, { chart: ui.chart, wikiQ: ui.wikiQ, wikiBack: ui.wikiBack.slice(), min: fresh && matchMedia(LANDSCAPE).matches });
+      return wins.find(w => w.tab === tab).el.querySelector('.fw-title').focus({ preventScroll: true });
+    }
     case 'reset-stats': stats = { hands: 0, net: 0, decisions: 0, agree: 0 }; saveStats(); renderStats(); b.textContent = 'Статистика сброшена'; return;
   }
   if (b.dataset.reveal) { ui.hintShown = true; renderCoach(); return renderActions(); }
   if (b.dataset.why) return $('#coach').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
   if (b.dataset.to) { ui.raiseTo = +b.dataset.to; return renderActions(); }
   if (b.dataset.tab) { ui.sheetTab = b.dataset.tab; return renderSheet(); }
-  if (b.dataset.chart) { ui.chart = b.dataset.chart; return renderSheet(); }
-  if ('wcat' in b.dataset) { ui.wikiCat = b.dataset.wcat; return renderSheet(); }
-  if (b.dataset.wiki) { ui.wikiQ = b.dataset.wiki; ui.wikiCat = ''; renderSheet(); $('#sheet').scrollTop = 0; return; }
+  const st = winOf(b), show = () => st === ui ? renderSheet() : renderWin(st); // кнопка в шпаргалке или в одном из окон
+  if (b.dataset.fwMin) {
+    setMin(st, !st.min);
+    if (!st.min && st.tab === 'combos') renderWin(st); // свёрнутое окно не прокручивалось к твоей комбинации
+    return saveWins();
+  }
+  if (b.dataset.fwX) {
+    const had = st.el.contains(document.activeElement);
+    st.el.remove(); wins.splice(wins.indexOf(st), 1);
+    if (had) $('#open-sheet').focus({ preventScroll: true }); // фокус не теряется вместе с окном
+    return saveWins();
+  }
+  if (b.dataset.chart) { st.chart = b.dataset.chart; return show(); }
+  if ('wcat' in b.dataset) { st.wikiCat = b.dataset.wcat; st.wikiBack = []; return show(); } // свой выбор — новый путь
+  if (b.dataset.wiki || b.dataset.wikiBack) {
+    const box = st === ui ? $('#sheet') : st.el.querySelector('.fw-body'); // что прокручивается
+    if (b.dataset.wiki) { // запоминаем, откуда ушли по ссылке, не глубже 30 шагов
+      const d = b.closest('details');
+      st.wikiBack = [...st.wikiBack, { q: st.wikiQ, cat: st.wikiCat, top: box.scrollTop, from: d?.dataset.t || '',
+        off: d ? d.getBoundingClientRect().top - box.getBoundingClientRect().top : 0 }].slice(-30);
+      st.wikiQ = b.dataset.wiki; st.wikiCat = ''; show(); box.scrollTop = 0; return;
+    }
+    const p = st.wikiBack.pop();
+    if (!p) return show();
+    st.wikiQ = p.q; st.wikiCat = p.cat; show();
+    const from = [...box.querySelectorAll('details.we')].find(d => d.dataset.t === p.from);
+    if (!from) { box.scrollTop = p.top; return; }
+    // статья со ссылкой снова раскрыта и стоит, где была: считаем от неё, а не от прокрутки — другие статьи
+    // после перерисовки свёрнуты, а окно бывает меньше шпаргалки (поэтому не ниже середины)
+    from.open = true;
+    box.scrollTop += from.getBoundingClientRect().top - box.getBoundingClientRect().top - Math.min(p.off, box.clientHeight / 2);
+    return;
+  }
   if (b.dataset.close) b.closest('dialog').close();
 });
 document.addEventListener('input', e => {
-  if (e.target.id === 'wiki-q') { ui.wikiQ = e.target.value; $('#wiki-list').innerHTML = wikiListHTML(); return; }
+  if (e.target.classList.contains('wiki-q')) { const st = winOf(e.target); st.wikiQ = e.target.value; st.wikiBack = []; e.target.parentElement.querySelector('.wiki-list').innerHTML = wikiListHTML(st); return; }
   if (e.target.id !== 'amt') return;
   ui.raiseTo = +e.target.value;
   $('#amt-out').textContent = fmt(ui.raiseTo);
@@ -1340,8 +1565,17 @@ document.addEventListener('input', e => {
 document.addEventListener('change', e => {
   if (e.target.id === 'opp') { settings.opponents = +e.target.value; store.set('ht-settings', settings); }
   if (e.target.name === 'hint') { settings.hint = e.target.value; store.set('ht-settings', settings); renderCoach(); }
+  if (e.target.classList.contains('chart-sel')) { const st = winOf(e.target); if (st !== ui) { st.chart = e.target.value || null; renderWin(st); } } // ui — список успел перерисоваться
 });
 document.addEventListener('keydown', e => {
+  const arrow = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+  if (arrow && e.target.classList?.contains('fw-title')) { // окно без мыши: стрелки двигают, Shift+стрелки меняют размер
+    e.preventDefault();
+    const st = winOf(e.target), r = st.el.getBoundingClientRect(), [dx, dy] = arrow.map(v => v * 16);
+    if (!e.shiftKey) { st.box.x = r.left + dx; st.box.y = r.top + dy; }
+    else if (!st.min) st.box = { x: r.left, y: r.top, w: r.width + dx, h: r.height + dy };
+    place(st); return saveWins();
+  }
   if (document.querySelector('dialog[open]') || e.metaKey || e.ctrlKey || e.altKey || e.target.closest('input,select,textarea')) return;
   const id = { f: 'a-fold', 'а': 'a-fold', c: 'a-call', 'с': 'a-call', r: 'a-raise', 'к': 'a-raise', n: 'next', 'т': 'next' }[e.key.toLowerCase()];
   const btn = id && document.getElementById(id);
@@ -1350,6 +1584,12 @@ document.addEventListener('keydown', e => {
 $('#sheet').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); });
 $('#settings').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); });
 
+const savedWins = store.get('ht-windows', []), TABS = [...document.querySelectorAll('#sheet .tab')].map(t => t.dataset.tab);
+if (Array.isArray(savedWins)) for (const w of savedWins) {
+  if (!w || !TABS.includes(w.tab)) continue;
+  const b = w.box, ok = b && [b.x, b.y, b.w, b.h].every(Number.isFinite);
+  openWin(w.tab, ok ? { min: w.min === true, box: { x: b.x, y: b.y, w: b.w, h: b.h } } : { min: w.min === true });
+}
 nextHand();
 </script>
 
