@@ -4,7 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<style>/* вырезы экрана; в Telegram во весь экран — ещё и его кнопки сверху (--tg-*: telegram-web-app.js). Диалоги — ниже них */
+:root{--sat:calc(max(env(safe-area-inset-top,0px),var(--tg-safe-area-inset-top,0px)) + var(--tg-content-safe-area-inset-top,0px));
+  --sab:max(env(safe-area-inset-bottom,0px),var(--tg-safe-area-inset-bottom,0px));padding-top:var(--sat);padding-bottom:var(--sab)}
+:root dialog{top:var(--sat);max-height:calc(100% - 24px - var(--sat))}
+.tbtn[aria-pressed=true]{border-color:var(--brass);color:var(--brass)}
+body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Холдем-тренер</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Prata&display=swap">
@@ -39,12 +44,13 @@ button{cursor:pointer}
 .stat{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .stat b{color:var(--ink);font-weight:600}
 .stat b.up{color:var(--good)} .stat b.down{color:var(--bad)}
+.tools{display:flex;flex-wrap:wrap;gap:8px} /* кнопки шапки переносятся вместе, а не по одной */
 .tbtn{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:7px 12px;font-weight:500}
 .tbtn:hover{border-color:var(--brass)}
 
-/* стол */
+/* стол: ширину и высоту сукна задаёт fit() — всё сукно с местами и кнопки ходов в окне без прокрутки */
 .table-wrap{grid-area:table;padding:34px 46px 60px;overflow-x:clip}
-.felt{position:relative;aspect-ratio:2/1;border-radius:999px;background:radial-gradient(ellipse at 50% 42%,var(--felt) 0%,var(--felt-deep) 80%);
+.felt{position:relative;aspect-ratio:2/1;margin-inline:auto;border-radius:999px;background:radial-gradient(ellipse at 50% 42%,var(--felt) 0%,var(--felt-deep) 80%);
   box-shadow:0 0 0 10px var(--rail),0 0 0 12px var(--rail-hi),0 18px 40px var(--shade),inset 0 0 60px var(--shade)}
 .felt::before{content:"";position:absolute;inset:9% 7%;border:1px solid var(--felt-line);border-radius:999px;pointer-events:none}
 .seat{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:3px;z-index:3;width:max-content;max-width:104px}
@@ -82,7 +88,7 @@ button{cursor:pointer}
 .mc.s0{color:var(--spade)} .mc.s1{color:var(--heart)} .mc.s2{color:var(--diamond)} .mc.s3{color:var(--club)}
 
 /* действия */
-.actions{grid-area:actions;position:sticky;bottom:0;z-index:5;background:var(--room);padding-block:10px calc(10px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line)}
+.actions{grid-area:actions;position:sticky;bottom:0;z-index:5;background:var(--room);padding-block:10px calc(10px + var(--sab,env(safe-area-inset-bottom,0px)));display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line)}
 .row{display:flex;gap:8px;align-items:center}
 .abtn{flex:1 1 0;min-width:0;padding:12px 8px;border-radius:11px;border:1px solid var(--line);background:var(--panel-2);font-weight:600;font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .abtn:hover{border-color:var(--muted)}
@@ -179,6 +185,8 @@ td.num,th.num{text-align:right;white-space:nowrap}
 .field label{display:flex;gap:8px;align-items:center}
 select{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:7px 10px}
 .bots{margin:0;padding:0;list-style:none;display:grid;gap:6px;font-size:13px}
+.seat-picks{display:grid;gap:6px}
+.seat-picks label{justify-content:space-between}
 .bots li{color:var(--muted)} .bots b{color:var(--ink)} .bots .at{color:var(--brass);font-size:11px;margin-left:4px}
 .dlg-head .pop{order:4;font-size:13px}
 
@@ -224,7 +232,6 @@ select{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;
 @media (max-width:560px){
   .brand{font-size:20px}
   .table-wrap{padding:30px 30px 66px}
-  .felt{aspect-ratio:2/3}
   .seat:not(.hero):not(.shown) .cards{display:none}
   .center{--cw:28px}
   .seat{max-width:82px}
@@ -236,6 +243,18 @@ select{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;
   .abtn.primary{flex-grow:1.4}
   .act,.hn{white-space:normal;max-width:96px;text-align:center}
 }
+/* низкое окно в одну колонку (окно Telegram на iPad, небольшой телефон): шапка в одну-две строки без названия — место столу.
+   У телефона лёжа своя раскладка ниже */
+@media (max-width:900px) and (max-height:760px){ @media not all and (min-aspect-ratio:4/3) and (max-height:560px) and (min-width:561px){
+  .app{padding-top:6px;row-gap:6px}
+  .brand{display:none}
+  .top,.stats,.tools{gap:4px 6px}
+  .stat{padding:2px 8px}
+  .tbtn{padding:5px 10px}
+  .table-wrap{padding-bottom:48px} /* своё место выступает за край меньше, чем на высоком телефоне */
+  .actions{padding-top:6px;gap:6px}
+  .sizing output{display:none} /* сумма и так на кнопке ставки, а без неё ползунок не переносит её одну на третью строку */
+}}
 /* телефон лёжа: весь стол по высоте экрана слева, кнопки ходов справа сверху, тренер ниже.
    min-width — чтобы не сработало на телефоне стоя, когда клавиатура съела высоту */
 @media (min-aspect-ratio:4/3) and (max-height:560px) and (min-width:561px){
@@ -243,14 +262,7 @@ select{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;
   .brand{display:none}
   .top{gap:6px}
   .stats{gap:4px}
-  .table-wrap{padding:20px 30px 42px}
-  /* сукно во всю высоту экрана, шириной до 2:1; 66px — отступы над и под ним: места игроков выступают за край.
-     На узком телефоне оно выше, чем 2:1, — иначе подписи наезжают на борд и карты соседей */
-  .felt{aspect-ratio:auto;margin-inline:auto;
-    width:min(100%,(100vh - 66px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)) * 2);
-    width:min(100%,(100dvh - 66px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)) * 2);
-    height:calc(100vh - 66px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
-    height:calc(100dvh - 66px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
+  .table-wrap{padding:20px 30px 42px} /* сукно — во всю высоту экрана (fit), места игроков выступают за край */
   .act,.hn{max-width:104px;overflow:hidden;text-overflow:ellipsis} /* длинное название руки не обрезается краем стола */
   .seat:not(.hero):not(.shown) .cards{display:none}
   .center{--cw:26px}
@@ -270,6 +282,7 @@ select{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;
 }
 @media (prefers-reduced-motion:no-preference){
   .turn .plate{animation:glow 1.4s ease-in-out infinite alternate}
+  .felt.fit{transition:width .25s,height .25s,zoom .25s}
   @keyframes glow{to{box-shadow:0 0 0 2px var(--brass),0 0 16px var(--brass)}}
 }
 </style>
@@ -278,8 +291,7 @@ select{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;
   <header class="top">
     <h1 class="brand"><span class="pip" aria-hidden="true">♠</span>Холдем-тренер</h1>
     <div class="stats" id="stats"></div>
-    <button class="tbtn" id="open-sheet" type="button">Шпаргалка</button>
-    <button class="tbtn" id="open-settings" type="button">Настройки</button>
+    <div class="tools"><button class="tbtn" id="open-sheet" type="button">Шпаргалка</button><button class="tbtn" id="open-settings" type="button">Настройки</button></div>
   </header>
   <section class="table-wrap" aria-label="Покерный стол"><div class="felt" id="felt"></div></section>
   <aside class="coach" id="coach" aria-label="Тренер"></aside>
@@ -312,11 +324,14 @@ select{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;
     <label class="field" for="opp"><span>Соперников за столом</span>
       <select id="opp"><option value="1">1 — игра один на один</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5 — полный стол на 6 мест</option></select>
     </label>
+    <label class="field" for="lineup"><span>Кто против тебя</span><select id="lineup"></select></label>
+    <p class="fine" id="lineup-note"></p>
+    <div class="field" id="custom-seats" hidden><span>Свой состав</span><div class="seat-picks" id="seat-picks"></div></div>
     <fieldset class="field"><legend>Совет тренера</legend>
       <label for="hint-button"><input type="radio" name="hint" id="hint-button" value="button"> По кнопке: сначала решаешь сам</label>
       <label for="hint-always"><input type="radio" name="hint" id="hint-always" value="always"> Показывать сразу</label>
     </fieldset>
-    <p class="fine">Новое число соперников применится со следующей раздачи.</p>
+    <p class="fine">Изменения применятся со следующей раздачи.</p>
     <div class="field"><span>Кто сидит за столом</span><ul class="bots" id="bots"></ul></div>
     <div><button class="tbtn" type="button" id="reset-stats">Сбросить статистику</button></div>
   </div>
@@ -741,8 +756,11 @@ function botAction(G, i) {
 
 // ---------- движок раздачи ----------
 function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; }
-function createGame(nOpp) {
-  const players = [{ name: 'Ты', isHero: true }, ...BOT_ORDER.slice(0, nOpp).map(s => ({ name: STYLES[s].name, style: s }))];
+// lineup — стили ботов по местам («три фиша и маньяк»); без него — по одному каждого стиля. Повторы нумеруем: «Маньяк 2»
+function createGame(nOpp, lineup = BOT_ORDER) {
+  const styles = lineup.filter(s => STYLES[s]).slice(0, nOpp), num = {};
+  const many = s => styles.filter(x => x === s).length > 1;
+  const players = [{ name: 'Ты', isHero: true }, ...styles.map(s => ({ name: STYLES[s].name + (many(s) ? ' ' + (num[s] = (num[s] || 0) + 1) : ''), style: s }))];
   players.forEach((p, i) => { p.seat = i; p.hole = []; p.stack = STACK; p.bet = 0; p.total = 0; });
   return { players, button: Math.random() * players.length | 0, handNo: 0, board: [], street: 0, log: [], pos: positions(players.length, 0), toAct: -1, over: true, currentBet: 0, minRaise: BB, raises: 0, aggressorIdx: -1 };
 }
@@ -1093,11 +1111,25 @@ const store = {
   get(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v && typeof v === 'object' ? v : d; } catch { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
 };
-const settings = Object.assign({ opponents: 5, hint: 'button' }, store.get('ht-settings', {}));
+const settings = Object.assign({ opponents: 5, hint: 'button', lineup: 'mix', custom: [...BOT_ORDER] }, store.get('ht-settings', {}));
+if (!Array.isArray(settings.custom) || settings.custom.length !== BOT_ORDER.length) settings.custom = [...BOT_ORDER];
+const LINEUPS = { // состав соперников и чему учит такой стол
+  mix: ['Смешанный — все разные', 'Все пять стилей: общая игра.'],
+  fish: ['Фиши', 'Против новичков: учишься забирать фишки у слабых — ставить на вэлью и меньше блефовать.'],
+  station: ['Колл-станции', 'Уравнивают почти всё: ставь на вэлью, блеф не пройдёт.'],
+  maniac: ['Маньяки', 'Часто ставят и блефуют: учишься выдерживать давление и ловить блефы.'],
+  shark: ['Реги (акулы)', 'Тайтово-агрессивные: сложный стол против сильных.'],
+  rock: ['Ниты (скалы)', 'Играют только сильные руки: воруй блайнды и уважай их рейзы.'],
+  custom: ['Свой состав', 'Выбери стиль для каждого места.'],
+};
+const lineup = () => settings.lineup === 'custom' ? settings.custom : STYLES[settings.lineup] ? BOT_ORDER.map(() => settings.lineup) : BOT_ORDER;
+const seatsKey = () => settings.opponents + ':' + lineup().slice(0, settings.opponents).join(',');
+function freshGame() { const g = createGame(settings.opponents, lineup()); g.lineupKey = seatsKey(); return g; }
 let stats = Object.assign({ hands: 0, net: 0, decisions: 0, agree: 0 }, store.get('ht-stats', {}));
-let G = createGame(settings.opponents);
+let G = freshGame();
 const ui = { advice: null, hintShown: false, feedback: null, raiseTo: 0, sheetTab: 'combos', chart: null, wikiQ: '', wikiCat: '', wikiBack: [] };
 let timer = null;
+// web/remote.js (стол с другом) переназначает applyAction, tick, nextHand, renderActions, renderCoach и читает G, ui, stats, timer, settings, presets, render, announce, resetHandUI, saveStats, freshGame, strip, escHTML, signed, upDown, mini, LANDSCAPE, $ — переименуешь, поправь там и в build_web.js
 const hero = () => G.players[0];
 const ACT_RU = { fold: 'фолд', check: 'чек', call: 'колл', raise: 'ставка или рейз' };
 const signed = ch => (ch > 0 ? '+' : ch < 0 ? '−' : '') + fmt(Math.abs(ch));
@@ -1153,7 +1185,7 @@ function renderTable() {
     const open = p.isHero || p.shown;
     const cards = p.folded && !p.isHero ? '' : p.hole.map(c => open ? cardHTML(c, p.isHero && best.has(c) ? 'hl' : '') : BACK).join('');
     const cls = ['seat', p.isHero && 'hero', p.shown && 'shown', p.folded && 'folded', !G.over && G.toAct === i && 'turn', G.over && G.winners && G.winners.includes(p) && 'winner'].filter(Boolean).join(' ');
-    const tip = p.style ? `${STYLES[p.style].tag}: ${STYLES[p.style].desc}` : 'Это ты';
+    const tip = p.style ? `${STYLES[p.style].tag}: ${STYLES[p.style].desc}` : p.isHero ? 'Это ты' : 'Игрок за этим столом';
     const tag = G.over && p.shown ? `<div class="hn">${p.handName}</div>` : p.last ? `<div class="act">${p.last}</div>` : '';
     html += `<div class="${cls}" style="${at(44, 41)}" title="${tip}"><div class="cards">${cards}</div>`
       + `<div class="plate"><span class="pos">${G.pos[i]}</span><span class="nm">${p.name}</span><span class="stk">${fmt(p.stack)}</span></div>${tag}</div>`;
@@ -1291,12 +1323,12 @@ function tick() {
     tick();
   }, hero().folded ? 300 : 750);
 }
+function resetHandUI() { ui.feedback = null; ui.advice = null; ui.hintShown = false; for (const w of wins) w.chart = null; } // таблица рук в окне снова следит за раздачей
 function nextHand() {
   clearTimeout(timer);
-  if (settings.opponents !== G.players.length - 1) G = createGame(settings.opponents);
+  if (G.lineupKey !== seatsKey()) G = freshGame();
   newHand(G);
-  ui.feedback = null; ui.advice = null; ui.hintShown = false;
-  for (const w of wins) w.chart = null; // таблица рук в окне снова следит за раздачей
+  resetHandUI();
   tick();
 }
 
@@ -1381,13 +1413,24 @@ function renderSheet() {
 }
 function openSettings() {
   $('#opp').value = String(settings.opponents);
+  $('#lineup').innerHTML = Object.entries(LINEUPS).map(([k, [l]]) => `<option value="${k}">${l}</option>`).join('');
+  $('#lineup').value = LINEUPS[settings.lineup] ? settings.lineup : 'mix';
+  renderLineup();
   $('#hint-' + settings.hint).checked = true;
   renderBots();
   $('#settings').showModal();
 }
-function renderBots() {
-  const at = new Set(G.players.map(p => p.style));
-  $('#bots').innerHTML = BOT_ORDER.map(s => `<li><b>${STYLES[s].name}</b> (${STYLES[s].tag}) — ${STYLES[s].desc}${at.has(s) ? '<span class="at">за столом</span>' : ''}</li>`).join('');
+function renderBots() { // по составу следующей раздачи
+  const at = lineup().slice(0, settings.opponents), n = s => at.filter(x => x === s).length;
+  $('#bots').innerHTML = BOT_ORDER.map(s => `<li><b>${STYLES[s].name}</b> (${STYLES[s].tag}) — ${STYLES[s].desc}${n(s) ? `<span class="at">за столом${n(s) > 1 ? ' ×' + n(s) : ''}</span>` : ''}</li>`).join('');
+}
+function renderLineup() {
+  const custom = settings.lineup === 'custom';
+  $('#lineup-note').textContent = (LINEUPS[settings.lineup] || LINEUPS.mix)[1];
+  $('#custom-seats').hidden = !custom;
+  $('#seat-picks').innerHTML = custom ? settings.custom.slice(0, settings.opponents).map((v, i) => `<label>Место ${i + 1}<select data-seat="${i}">`
+    + BOT_ORDER.map(s => `<option value="${s}"${s === v ? ' selected' : ''}>${STYLES[s].name} (${STYLES[s].tag})</option>`).join('') + '</select></label>').join('') : '';
+  renderBots();
 }
 
 // ---------- окна шпаргалки поверх стола ----------
@@ -1397,8 +1440,9 @@ const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
 const winOf = el => { const f = el.closest('.fw'); return f ? wins.find(w => w.el === f) : ui; };
 const saveWins = () => store.set('ht-windows', wins.map(({ tab, box, min }) => ({ tab, box, min })));
 const LANDSCAPE = '(min-aspect-ratio:4/3) and (max-height:560px) and (min-width:561px)'; // телефон лёжа, как в CSS
-// высота экрана без учёта щипкового зума; в quirks-режиме clientHeight — высота всей страницы
-const viewH = () => document.compatMode === 'CSS1Compat' ? document.documentElement.clientHeight : innerHeight;
+// высота экрана без учёта щипкового зума; в quirks-режиме clientHeight — высота всей страницы.
+// В Telegram окно страницы бывает выше видимой части — видимую высоту build_web.js кладёт в --vh
+const viewH = () => Math.min(document.compatMode === 'CSS1Compat' ? document.documentElement.clientHeight : innerHeight, parseFloat(document.documentElement.style.getPropertyValue('--vh')) || Infinity);
 function openWin(tab, init) {
   let st = wins.find(w => w.tab === tab);
   if (!st) {
@@ -1493,7 +1537,30 @@ function endDrag(e) {
 }
 document.addEventListener('pointerup', endDrag);
 document.addEventListener('pointercancel', endDrag);
+
+// ---------- стол под любое окно ----------
+// Сукно — самое большое, что влезает между шапкой и кнопками ходов (лёжа кнопки сбоку — во всю высоту): с тренером сбоку (ПК)
+// это овал 2:1, в одну колонку (телефон, окно Telegram на iPad) и лёжа — по месту, от 2:3 до 2:1. Кнопки берём самые высокие
+// за этот размер окна (свой ход с ползунком), иначе стол прыгал бы с каждым ходом. В одну колонку низкое сукно мельчит места
+// и карты (zoom, не меньше 0,75), иначе твои карты наползают на борд и ставки
+let actMax = 0, fitKey = '';
+const ZOOM = CSS.supports('zoom', '1'); // Firefox до 126 его не знает — там без уменьшения
+function fit() {
+  const felt = $('#felt'), wrap = felt.parentElement, act = $('#actions'), r = wrap.getBoundingClientRect(), cs = getComputedStyle(wrap), px = k => parseFloat(cs[k]);
+  const side = el => el.getBoundingClientRect().left >= r.right - 1, vh = viewH(), key = document.documentElement.clientWidth + 'x' + vh;
+  if (key !== fitKey) { fitKey = key; actMax = store.get('ht-act', {})[key] || 0; } // высоту кнопок для этого окна помним между запусками: иначе стол сжимается на первом же твоём ходу
+  if (act.offsetHeight > actMax) { actMax = act.offsetHeight; const m = store.get('ht-act', {}); m[key] = actMax; store.set('ht-act', m); }
+  const W = r.width - px('paddingLeft') - px('paddingRight'), H = vh - r.top - scrollY - px('paddingTop') - px('paddingBottom') - 1 // 1px: дробные пиксели не включают полосу прокрутки, а она — новую подгонку
+    - (side(act) ? parseFloat(getComputedStyle(document.documentElement).paddingBottom) : actMax + parseFloat(getComputedStyle(wrap.parentElement).rowGap));
+  const two = side($('#coach')), wide = !side(act) && innerWidth > 560; // в широкой колонке (iPad стоя) высокое сукно — пустое поле, а тренер уезжает под кнопки
+  const h = Math.max(100, Math.min(H, two || wide ? W / 2 : W * 1.5)), z = ZOOM && !two && !wide && !side(act) ? Math.min(1, Math.max(.75, h / 340)) : 1;
+  felt.style.zoom = z; felt.style.width = Math.min(W, 2 * h) / z + 'px'; felt.style.height = h / z + 'px';
+  if (!felt.classList.contains('fit')) { void felt.offsetWidth; felt.classList.add('fit'); } // плавно — только после первой подгонки
+}
+const fitRO = new ResizeObserver(() => fit()); // шапка переносится, кнопки ходов меняются; окно — через resize
+fitRO.observe($('.top')); fitRO.observe($('#actions'));
 addEventListener('resize', () => {
+  fit();
   wins.forEach(place);
   if (matchMedia(LANDSCAPE).matches) $('#actions').scrollIntoView({ block: 'nearest' }); // повернул телефон — кнопки ходов на виду
 });
@@ -1563,7 +1630,9 @@ document.addEventListener('input', e => {
   document.querySelectorAll('.sizing .chip').forEach(c => c.setAttribute('aria-pressed', String(+c.dataset.to === ui.raiseTo)));
 });
 document.addEventListener('change', e => {
-  if (e.target.id === 'opp') { settings.opponents = +e.target.value; store.set('ht-settings', settings); }
+  if (e.target.id === 'opp') { settings.opponents = +e.target.value; store.set('ht-settings', settings); renderLineup(); }
+  if (e.target.id === 'lineup') { settings.lineup = e.target.value; store.set('ht-settings', settings); renderLineup(); }
+  if (e.target.dataset.seat) { settings.custom[+e.target.dataset.seat] = e.target.value; store.set('ht-settings', settings); renderBots(); }
   if (e.target.name === 'hint') { settings.hint = e.target.value; store.set('ht-settings', settings); renderCoach(); }
   if (e.target.classList.contains('chart-sel')) { const st = winOf(e.target); if (st !== ui) { st.chart = e.target.value || null; renderWin(st); } } // ui — список успел перерисоваться
 });
@@ -1594,13 +1663,206 @@ nextHand();
 </script>
 
 <script>
+const HT_API = "https://216.87.53.81";
+// Стол с другом в мини-приложении: страница рисует вид стола с сервера (table.js view — устроен как G, зритель на месте 0),
+// а ходы уходят в API бота (bot.js api). build_web.js встраивает файл после страницы вместе с `const HT_API = "…"`.
+// Вне Telegram (Artifact, обычный браузер) и в сборке без HT_API ничего не делает и не шлёт ни одного запроса.
+// Опирается на глобальные имена страницы: список — в build_web.js (без них сборка падает) и в комментарии над hero().
+(() => {
+  const tw = window.Telegram?.WebApp;
+  if (!tw?.initData || !HT_API) return;
+  const base = { applyAction, tick, nextHand, renderActions, renderCoach };
+  const UNAVAIL = 'Сервер стола недоступен — попробуй позже.', MARK = { good: '✓', soft: '≈', bad: '✗' };
+  const E = s => escHTML(String(s)), cards = cs => cs.map(mini).join(' '), li = a => a.map(x => `<li>${E(x)}</li>`).join('');
+  let remote = false, polling = false, V = 0, view = null, invite = '', ends = 0, ctl = null, net = false, sending = false, active = true, copied = '';
+  const vis = () => document.visibilityState === 'visible' && active ? 1 : 0; // пока приложение на виду, бот не дублирует стол в чат
+  const secs = () => Math.max(0, Math.ceil((ends - Date.now()) / 1000));
+  const say = m => { try { tw.showAlert(m); } catch { alert(m); } }; // до версии 6.2 Telegram бросает исключение
+  const ask = (m, f) => { try { tw.showConfirm(m, f); } catch { f(confirm(m)); } };
+  const api = (op, b = {}, ms = 10000) => {
+    const c = new AbortController(), t = setTimeout(() => c.abort(new Error(UNAVAIL)), ms); // не ответил вовремя — это обрыв (баннер), а не AbortError
+    if (op === 'state') ctl = c;
+    return fetch(`${HT_API}/api/${op}`, { method: 'POST', body: JSON.stringify({ initData: tw.initData, vis: vis(), ...b }), signal: c.signal }) // тело-строка — text/plain, без preflight
+      .then(async r => {
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw Object.assign(new Error(j.error || UNAVAIL), { status: r.status, view: j.view, invite: j.invite }); // и с ошибкой приходит вид твоего стола
+        return j;
+      }).finally(() => clearTimeout(t));
+  };
+
+  function take(r, force) { // ответ сервера → G страницы; вид старше показанного (его обогнал другой ответ) пропускаем
+    const v = r?.view;
+    if (!remote || !v || v.v < V || v.v === V && !force && !net) return;
+    const hand = v.code + v.handNo, turn = v.key && v.key !== ui.key;
+    V = v.v; view = G = v; net = false;
+    if (v.key !== sending) sending = false; // вид с тем же ключом хода ещё не знает об отправленном ходе (сменилось что-то другое)
+    if (r.invite) invite = r.invite;
+    for (const p of v.players) p.name = E(p.name); // страница вставляет имена в разметку как есть (сервер их и так чистит)
+    for (const e of v.log) { if (e.who) e.who = E(e.who); if (e.t) e.t = E(e.t); }
+    if (v.winners) v.winners = v.winners.map(i => v.players[i]); // страница сравнивает победителей по ссылке
+    if (!v.handNo) { v.button = -1; v.pos = v.pos.map(() => ''); } // лобби: баттона и позиций ещё нет
+    if (hand !== ui.hand) { ui.hand = hand; resetHandUI(); }
+    if (v.key !== ui.key) { ui.key = v.key; ui.hintShown = false; if (v.key) ui.raiseTo = presets()[0][1]; }
+    ui.advice = sending ? null : v.advice; // совет приходит только в свой ход; пока ход в пути, кнопок нет — второго хода не будет
+    ends = v.left == null ? 0 : Date.now() + v.left;
+    const me = v.review?.players[0]; // в статистику — раздача, сыгранная тобой и увиденная здесь, один раз
+    if (!v.over) ui.live = hand;
+    else if (me && ui.live === hand && me.name === 'Ты' && me.hole.length) { ui.live = ''; stats.hands++; stats.net += me.result; saveStats(); }
+    render(); announce();
+    if (turn) { tw.HapticFeedback?.notificationOccurred?.('warning'); if (matchMedia(LANDSCAPE).matches) $('#actions').scrollIntoView({ block: 'nearest' }); }
+  }
+  applyAction = (g, i, a, amt) => { // ход героя (heroAct) — на сервер, без оптимистичного хода: ответ приходит за один запрос
+    if (!remote) return base.applyAction(g, i, a, amt);
+    if (i || !view.key) return;
+    sending = view.key;
+    api('act', { code: view.code, key: view.key, action: a, amount: amt }).then(r => take(r, true), e => { sending = false; fail(e); });
+  };
+  tick = () => remote ? render() : base.tick(); // боты и улицы — на сервере
+  nextHand = () => { // «Начать / Следующая раздача» и клавиша N — «готов»: сервер сдаст, когда готовы все за столом
+    if (!remote) return base.nextHand();
+    if (!view.over || view.ready) return;
+    view.ready = true; render();
+    api('ready', { code: view.code, handNo: view.handNo }).then(r => take(r, true), e => { if (view) view.ready = false; fail(e); }); // стол мог закрыться, пока ответ шёл: view уже null
+  };
+  renderActions = () => {
+    if (!remote) return base.renderActions();
+    const el = $('#actions'), v = view, line = s => { el.innerHTML = `<div class="wait">${s}</div>`; }, clock = `<span id="ht-clock">${secs()}</span> с`;
+    if (net) return line('Нет связи — переподключаюсь…');
+    if (sending) return line('Отправляю ход…');
+    if (v.pending) return line('Идёт раздача — ты сядешь со следующей.');
+    if (v.over) {
+      const me = v.review?.players[0], wait = v.waiting.filter(n => n !== 'Ты').map(E).join(', ');
+      const next = `<button class="abtn primary next" id="next" type="button" title="Клавиша N"${v.ready ? ' disabled' : ''}>${v.ready ? `Ждём${wait ? ': ' + wait : ''}…` : v.handNo ? 'Следующая раздача' : 'Начать раздачу'}</button>`;
+      el.innerHTML = !v.handNo ? `<div class="res">Позови друга или начинай с ботами.</div><div class="row">${v.free ? '<button class="abtn" type="button" data-tb="invite" style="flex-basis:auto">Позвать друга</button>' : ''}${next}</div>`
+        : strip() + `<div class="row"><div class="res">${v.log[v.log.length - 1]?.t || ''}${me?.name === 'Ты' ? ` Твой итог: <b class="${upDown(me.result)}">${signed(me.result)}</b>.` : ''}</div>${next}</div>`;
+      return;
+    }
+    if (v.away) return line('Время на ход вышло — до конца раздачи за тебя чек или фолд. <button class="link" type="button" data-tb="back">Я здесь</button>');
+    base.renderActions();
+    if (v.key && ends) el.insertAdjacentHTML('beforeend', `<div class="fine" style="text-align:center${v.warned ? ';color:var(--bad)' : ''}">⏳ ${v.warned ? `Осталось ${clock} — потом за тебя чек или фолд.` : clock}</div>`);
+    else if (ends) el.querySelector('.wait')?.insertAdjacentHTML('beforeend', ' · ⏳ ' + clock); // «Ходит Аня… · ⏳ 40 с»
+  };
+  renderCoach = () => { // тренер страницы; сверху — учитель и разбор раздачи, снизу — карточка стола
+    base.renderCoach();
+    if (!remote) return;
+    const v = view, rv = v.review, c = $('#coach');
+    c.insertAdjacentHTML('afterbegin', (v.peek ? `<div class="advice"><div class="eyebrow">Режим учителя</div><h3>👁 ${E(v.peek.name)} думает: ${cards(v.peek.hole)}</h3><p class="note">Тренер советует: <b>${E(v.peek.label)}</b></p><ul>${li(v.peek.advice.reasons.slice(0, 3))}</ul></div>` : '')
+      + (v.open && !v.over ? '<p class="intro">👁 Режим учителя включён — твои карты видят остальные за столом.</p>' : '')
+      + (!rv ? '' : `<div class="fb"><div class="fb-head"><b>Разбор раздачи ${v.handNo}</b><span>${cards(rv.board)}</span></div><ul>`
+        + rv.players.map(x => `<li>${x.won ? '🏆 ' : ''}<b>${E(x.name)}</b> (${E(x.pos)}): ${cards(x.hole)} — ${E(x.hand.toLowerCase())}${x.folded ? ', фолд' : ''} · ${signed(x.result)}</li>`).join('') + '</ul>'
+        + rv.decisions.map(d => `<p><span class="verdict ${E(d.kind)}">${MARK[d.kind] || ''}</span> ${E(d.name)}, ${E(d.street.toLowerCase())}: ${E(d.you.toLowerCase())} — ${d.kind === 'good' ? 'как у тренера' : 'тренер: ' + E(d.coach.toLowerCase())}</p>`
+          + (d.kind === 'good' ? '' : `<ul>${li(d.reasons.slice(0, 2))}</ul>`)).join('') + '</div>'));
+    c.insertAdjacentHTML('beforeend', `<div id="ht-table" style="display:grid;gap:8px"><div class="eyebrow">Стол · <span style="text-transform:none">${E(v.code)}</span> · мест: ${v.seats}</div><ul class="bots">`
+      + v.players.map((p, i) => `<li><b>${i ? E(p.name) : 'Ты'}</b>${i && p.style ? ' 🤖' : ''}${p.human && p.net ? ' · за столом ' + signed(p.net) : ''}${p.open ? ' · 👁 режим учителя' : ''}${p.away ? ' · нет на месте' : ''}`
+        + `${!i && v.pending ? ` · сядешь со следующей раздачи, пока играет ${E(p.name)}` : ''}</li>`).join('') + '</ul>'
+      + (!v.free ? '' : (v.handNo ? '' : '<p class="note">Перешли ссылку другу — по ней садятся на место бота.</p>') + '<div class="row"><button class="tbtn" type="button" data-tb="invite">Позвать друга</button>'
+        + (copied === 'field' ? `<input readonly value="${E(invite)}" aria-label="Ссылка-приглашение" style="flex:1;min-width:0;font-size:16px">` : `<button class="tbtn" type="button" data-tb="copy">${copied ? 'Ссылка скопирована' : 'Скопировать ссылку'}</button>`) + '</div>')
+      + (v.pending ? '' : `<div class="field"><label><input type="checkbox" data-tb="open"${v.open ? ' checked' : ''}> Режим учителя: остальные видят мои карты и подсказки</label></div>`)
+      + '<div><button class="link" type="button" data-tb="leave">Выйти из-за стола</button></div></div>');
+  };
+
+  function fail(e) { // с видом — догоняем стол; стола нет или подпись устарела — одиночная игра; иначе баннер, а опрос переспросит сразу
+    if (!remote) return;
+    if (e.view) return take(e, true);
+    if (e.status === 404 || e.status === 401) return quit(e.status === 404 ? 'Стол закрыт.' : 'Закрой и снова открой мини-приложение.');
+    net = true; sending = false; render(); ctl?.abort();
+  }
+  async function loop() { // длинный опрос: сервер держит запрос до изменения стола (до 25 с); без связи — паузы 1, 2, 5, 15 с
+    if (polling) return;
+    polling = true;
+    try {
+      for (let k = 0, t = 0; remote;) {
+        await new Promise(f => setTimeout(f, t + 600 - Date.now())); // не чаще раза в 0,6 с: сервер пускает 40 запросов за 10 с, а боты без людей ходят каждые 0,25 с
+        t = Date.now();
+        try { take(await api('state', { v: net ? 0 : V }, 35000)); k = 0; } // после обрыва v:0 — ответ сразу
+        catch (e) {
+          if (!remote) break;
+          if (e.status === 404 || e.status === 401) { fail(e); break; }
+          if (e.name !== 'AbortError') { net = true; render(); await new Promise(f => { setTimeout(f, [1, 2, 5, 15][Math.min(k++, 3)] * 1000); (ctl = new AbortController()).signal.onabort = f; }); } // ctl.abort() в resync, fail и quit будит паузу
+        }
+      }
+    } finally { polling = false; }
+  }
+  function enter(r) { // за столом: страница больше не играет сама (одиночную руку она раздала при загрузке)
+    if (!r?.view) return;
+    if (!remote) { remote = true; clearTimeout(timer); tw.enableClosingConfirmation?.(); pm(); }
+    take(r, true); loop();
+  }
+  let asked = false; // «твой ход», пока приложение свёрнуто, приходит в чат с ботом; кто пришёл по ссылке и боту не писал — разрешает это здесь, раз за запуск
+  const pm = () => {
+    if (asked || tw.initDataUnsafe?.user?.allows_write_to_pm || !tw.requestWriteAccess || !tw.isVersionAtLeast?.('6.9')) return;
+    asked = true;
+    try { tw.requestWriteAccess(ok => { if (ok && remote) api('join', { pm: 1 }).then(r => take(r, true), () => {}); }); } catch {} // pm — бот снова пробует писать в чат
+  };
+  function quit(msg) { // назад к одиночной игре
+    remote = false; V = 0; view = null; ui.hand = ui.key = null; copied = ''; ctl?.abort(); tw.disableClosingConfirmation?.();
+    G = freshGame(); base.nextHand();
+    if (msg) say(msg);
+  }
+  const resync = () => { if (remote) { ctl?.abort(); api('join').then(r => take(r, true), fail); } }; // join без кода — свой стол; снимает «нет на месте»
+  const hide = () => { if (remote) navigator.sendBeacon?.(`${HT_API}/api/hide`, JSON.stringify({ initData: tw.initData })); }; // свернули — стол сразу в чат
+  document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' ? resync() : hide());
+  tw.onEvent?.('activated', () => { active = true; resync(); });
+  tw.onEvent?.('deactivated', () => { active = false; hide(); });
+  setInterval(() => { const el = $('#ht-clock'); if (el) el.textContent = secs(); }, 1000);
+
+  document.body.insertAdjacentHTML('beforeend', '<dialog id="ht-new" aria-labelledby="ht-new-t"><div class="dlg-head"><h2 id="ht-new-t">Стол с другом</h2><button class="tbtn" type="button" data-close="1">Закрыть</button></div>'
+    + '<div class="dlg-body"><p>Ты, друг и боты на свободных местах. Фишки игровые: в каждой раздаче у всех по 100 bb. После раздачи тренер открывает все карты и разбирает ходы.</p>'
+    + `<label class="field" for="ht-seats"><span>Мест за столом</span><select id="ht-seats">${[2, 3, 4, 5, 6].map(n => `<option value="${n}">${n === 2 ? '2 — только вы двое' : n === 6 ? '6 — полный стол' : n}</option>`).join('')}</select></label>`
+    + '<p class="fine" id="ht-err" style="color:var(--bad)" hidden></p><div><button class="abtn primary" type="button" data-tb="create">Создать стол</button></div></div></dialog><style>.pos:empty{display:none}</style>');
+  $('#open-settings').insertAdjacentHTML('beforebegin', '<button class="tbtn" type="button" data-tb="menu">С другом</button>');
+  $('#ht-new').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); });
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-tb]'), op = b?.dataset.tb;
+    if (op === 'menu') {
+      if (remote) return $('#ht-table')?.scrollIntoView({ block: 'start' });
+      $('#ht-seats').value = String(Math.min(6, settings.opponents + 1)); $('#ht-err').hidden = true;
+      return $('#ht-new').showModal();
+    }
+    if (op === 'create') {
+      b.disabled = true;
+      api('create', { seats: +$('#ht-seats').value }).then(r => { $('#ht-new').close(); enter(r); }, e => { $('#ht-err').textContent = e.status ? e.message : UNAVAIL; $('#ht-err').hidden = false; })
+        .finally(() => { b.disabled = false; });
+    }
+    if (op === 'invite') try { tw.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(invite) + '&text=' + encodeURIComponent('Садись за мой покерный стол: фишки игровые, тренер подсказывает.')); } catch { say(invite); }
+    if (op === 'copy') (navigator.clipboard?.writeText(invite) ?? Promise.reject()).then(() => { copied = 'ok'; renderCoach(); }, () => { copied = 'field'; renderCoach(); $('#ht-table input[readonly]')?.select(); });
+    if (op === 'leave') ask('Выйти из-за стола? Место займёт бот.', ok => { if (!ok || !remote) return; const code = view.code; quit(); api('leave', { code }).catch(() => {}); });
+    if (op === 'back') resync();
+  });
+  document.addEventListener('change', e => { if (remote && e.target.dataset.tb === 'open') api('open', { code: view.code, on: e.target.checked ? 1 : 0 }).then(r => take(r, true), fail); });
+
+  // код стола: из ссылки на мини-приложение (startapp=t_КОД) или из адреса страницы (?t=КОД); без кода — продолжить свой стол
+  const code = /^t_([\w-]{8})$/.exec(tw.initDataUnsafe?.start_param || '')?.[1] || /^[\w-]{8}$/.exec(new URLSearchParams(location.search).get('t') || '')?.[0];
+  const first = n => remote || api('join', code ? { code } : {}).then(enter, e => { // нет стола — одиночная игра
+    if (!e.view && n < 2 && !(e.status < 429)) return setTimeout(first, 3000 << n, n + 1); // нет связи, 429 или 5xx — ещё две попытки: иначе за столом ждали бы, пока приложение не откроют заново
+    if (e.view) enter(e);
+    if (code) say(e.status ? e.message : UNAVAIL);
+  });
+  first(0);
+})();
+</script>
+<script>
 (() => { // внутри Telegram: на весь экран, без закрытия свайпом (мешает ползунку ставки), цвета стола
   const tw = window.Telegram && Telegram.WebApp;
   if (!tw || !tw.initData) return;
   tw.ready(); tw.expand();
   if (tw.disableVerticalSwipes) tw.disableVerticalSwipes();
-  if (tw.setHeaderColor) tw.setHeaderColor('#0d1813');
+  try { tw.setHeaderColor('#0d1813'); } catch {} // до 6.9 Telegram берёт только цвета темы и бросает — остальное ниже тогда не выполнилось бы
   if (tw.setBackgroundColor) tw.setBackgroundColor('#0d1813');
+  // видимая высота для подгонки стола (--vh) — только пока окно не раскрыто: на телефоне видна лишь его верхняя часть, 100dvh тут врёт.
+  // Раскрытое, во весь экран и на iPad — по самому окну: viewportStableHeight отстаёт, когда окно растёт
+  const vh = () => { const s = document.documentElement.style; tw.isExpanded || !(tw.viewportStableHeight > 0) ? s.removeProperty('--vh') : s.setProperty('--vh', tw.viewportStableHeight + 'px'); }, refit = () => setTimeout(() => { vh(); dispatchEvent(new Event('resize')); }); // после события: новые --tg-* telegram-web-app.js пишет уже после обработчиков
+  addEventListener('resize', vh, true); // capture — раньше подгонки страницы
+  for (const e of ['viewportChanged', 'safeAreaChanged', 'contentSafeAreaChanged', 'fullscreenChanged']) tw.onEvent(e, refit);
+  refit();
+  // ⛶ во весь экран — где окно приложения маленькое и не растягивается (iPad, компьютер); не вышло — кнопку прячем молча
+  if (!(tw.isVersionAtLeast && tw.isVersionAtLeast('8.0') && tw.requestFullscreen && Math.min(screen.width, screen.height) >= 700)) return;
+  const b = document.createElement('button'), sync = () => b.setAttribute('aria-pressed', String(!!tw.isFullscreen));
+  b.className = 'tbtn'; b.type = 'button'; b.title = 'Во весь экран'; b.setAttribute('aria-label', 'Во весь экран');
+  b.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" style="display:block"><path d="M1.5 6V1.5H6M10 1.5h4.5V6M14.5 10v4.5H10M6 14.5H1.5V10" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>';
+  b.onclick = () => tw.isFullscreen ? tw.exitFullscreen() : tw.requestFullscreen();
+  tw.onEvent('fullscreenChanged', sync); tw.onEvent('fullscreenFailed', e => { if (e?.error === 'UNSUPPORTED') b.hidden = true; else sync(); }); // ALREADY_FULLSCREEN (второе нажатие) — кнопка нужна, чтобы выйти
+  sync(); document.getElementById('open-settings').after(b);
 })();
 </script>
 </html>
